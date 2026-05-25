@@ -47,6 +47,7 @@ export interface Property {
   agency_fees_pct: number | null
   land_tax: number | null
   housing_tax: number | null
+  nickname: string | null
   surface: number | null
   rooms: number | null
   annonce_url: string | null

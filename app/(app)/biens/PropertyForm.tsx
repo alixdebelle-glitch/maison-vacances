@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress, getDrivingInfo } from '@/lib/utils'
 import { Property, PropertyStatus, STATUS_LABELS } from '@/types'
-import { MapPin, Euro, Home, Building2, FileText, Loader2 } from 'lucide-react'
+import { MapPin, Euro, Home, Building2, FileText, Loader2, AlertTriangle } from 'lucide-react'
 
 interface PropertyFormProps {
   property?: Property
@@ -26,8 +26,10 @@ export default function PropertyForm({ property }: PropertyFormProps) {
   const [loading, setLoading] = useState(false)
   const [geocoding, setGeocoding] = useState(false)
   const [error, setError] = useState('')
+  const [duplicate, setDuplicate] = useState<{ id: string; name: string } | null>(null)
 
   const [form, setForm] = useState({
+    nickname: property?.nickname || '',
     address: property?.address || '',
     city: property?.city || '',
     postal_code: property?.postal_code || '',
@@ -52,6 +54,18 @@ export default function PropertyForm({ property }: PropertyFormProps) {
     description_travaux: property?.description_travaux || '',
     status: (property?.status || 'a_visiter') as PropertyStatus,
   })
+
+  async function checkDuplicate(url: string) {
+    if (!url.trim()) { setDuplicate(null); return }
+    let query = supabase.from('properties').select('id, nickname, city').eq('annonce_url', url.trim())
+    if (property?.id) query = query.neq('id', property.id)
+    const { data } = await query.maybeSingle()
+    if (data) {
+      setDuplicate({ id: data.id, name: data.nickname || data.city || 'Bien existant' })
+    } else {
+      setDuplicate(null)
+    }
+  }
 
   async function handleGeocode() {
     const fullAddress = [form.address, form.city, form.postal_code].filter(Boolean).join(', ')
@@ -91,6 +105,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
       housing_tax: form.housing_tax ? parseFloat(form.housing_tax) : null,
       surface: form.surface ? parseFloat(form.surface) : null,
       rooms: form.rooms ? parseInt(form.rooms) : null,
+      nickname: form.nickname || null,
       annonce_url: form.annonce_url || null,
       agency_name: form.agency_name || null,
       agency_contact: form.agency_contact || null,
@@ -123,22 +138,34 @@ export default function PropertyForm({ property }: PropertyFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Statut */}
+      {/* Nom & Statut */}
       <div className="card">
         <h2 className="text-lg font-serif text-stone-700 mb-4 flex items-center gap-2">
-          <Home className="w-5 h-5 text-orange-500" /> Statut
+          <Home className="w-5 h-5 text-orange-500" /> Identification
         </h2>
-        <Field label="Pipeline">
-          <select
-            className="input"
-            value={form.status}
-            onChange={e => setForm(f => ({ ...f, status: e.target.value as PropertyStatus }))}
-          >
-            {(Object.entries(STATUS_LABELS) as [PropertyStatus, string][]).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Nom / Surnom (optionnel)">
+            <input
+              type="text"
+              className="input"
+              placeholder="Ex : Mas provençal, Maison du lac…"
+              value={form.nickname}
+              onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))}
+            />
+            <p className="text-xs text-stone-400 mt-1">Si vide, la ville sera utilisée comme nom</p>
+          </Field>
+          <Field label="Statut pipeline">
+            <select
+              className="input"
+              value={form.status}
+              onChange={e => setForm(f => ({ ...f, status: e.target.value as PropertyStatus }))}
+            >
+              {(Object.entries(STATUS_LABELS) as [PropertyStatus, string][]).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
       </div>
 
       {/* Localisation */}
@@ -231,8 +258,25 @@ export default function PropertyForm({ property }: PropertyFormProps) {
               onChange={e => setForm(f => ({ ...f, rooms: e.target.value }))} />
           </Field>
           <Field label="URL annonce">
-            <input type="url" className="input" placeholder="https://..." value={form.annonce_url}
-              onChange={e => setForm(f => ({ ...f, annonce_url: e.target.value }))} />
+            <input
+              type="url"
+              className={`input ${duplicate ? 'border-orange-400 focus:ring-orange-300' : ''}`}
+              placeholder="https://..."
+              value={form.annonce_url}
+              onChange={e => { setForm(f => ({ ...f, annonce_url: e.target.value })); setDuplicate(null) }}
+              onBlur={e => checkDuplicate(e.target.value)}
+            />
+            {duplicate && (
+              <div className="mt-2 flex items-start gap-2 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2">
+                <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-orange-700">
+                  Ce lien existe déjà pour le bien{' '}
+                  <a href={`/biens/${duplicate.id}`} target="_blank" className="font-semibold underline">
+                    {duplicate.name}
+                  </a>
+                </p>
+              </div>
+            )}
           </Field>
         </div>
       </div>

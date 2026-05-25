@@ -48,6 +48,12 @@ export async function geocodeAddress(address: string): Promise<{ lat: number; ln
   return null
 }
 
+export function getPropertyName(property: { nickname?: string | null; city?: string | null; postal_code?: string | null }): string {
+  if (property.nickname?.trim()) return property.nickname.trim()
+  if (property.city?.trim()) return property.city.trim()
+  return 'Bien sans nom'
+}
+
 export function formatPrice(price: number | null | undefined): string {
   if (!price) return '—'
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price)

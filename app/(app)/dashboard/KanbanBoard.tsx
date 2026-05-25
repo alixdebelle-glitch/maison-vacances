@@ -9,7 +9,7 @@ import { useDroppable } from '@dnd-kit/core'
 import Link from 'next/link'
 import { Property, PropertyStatus, STATUS_LABELS } from '@/types'
 import { createClient } from '@/lib/supabase'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, getPropertyName } from '@/lib/utils'
 import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react'
 
 // Colonnes actives dans le kanban principal (sans "éliminé")
@@ -59,8 +59,8 @@ function PropertyCard({ property, familyScore, photoUrl }: {
       <Link href={`/biens/${property.id}`} onClick={e => e.stopPropagation()}>
         <div className="p-3 space-y-1">
           <p className="font-semibold text-stone-800 text-sm">
-            {property.city || 'Ville inconnue'}
-            {property.postal_code && <span className="text-stone-400 font-normal"> {property.postal_code}</span>}
+            {getPropertyName(property)}
+            {property.nickname && property.city && <span className="text-stone-400 font-normal text-xs block">{property.city}</span>}
           </p>
           {property.price && (
             <p className="text-orange-600 font-medium text-sm">{formatPrice(property.price)}</p>
@@ -274,7 +274,7 @@ export default function KanbanBoard({ initialProperties, familyScores, photosMap
       <DragOverlay>
         {activeProperty && (
           <div className="bg-white rounded-xl border border-stone-200 shadow-xl p-3 w-60 opacity-95">
-            <p className="font-semibold text-stone-800 text-sm">{activeProperty.city || 'Ville inconnue'}</p>
+            <p className="font-semibold text-stone-800 text-sm">{getPropertyName(activeProperty)}</p>
             {activeProperty.price && (
               <p className="text-orange-600 font-medium text-sm">{formatPrice(activeProperty.price)}</p>
             )}

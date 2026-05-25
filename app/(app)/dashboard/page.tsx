@@ -1,7 +1,5 @@
 import { createClient } from '@/lib/supabase-server'
-import KanbanBoard from './KanbanBoard'
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import DashboardClient from './DashboardClient'
 
 export default async function DashboardPage() {
   const supabase = createClient()
@@ -45,23 +43,10 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-serif text-stone-800">Tableau de bord</h1>
-          <p className="text-stone-500 mt-1">{properties?.length || 0} bien(s) suivi(s)</p>
-        </div>
-        <Link href="/biens/nouveau" className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Ajouter un bien
-        </Link>
-      </div>
-
-      <KanbanBoard
-        initialProperties={(properties || []) as any}
-        familyScores={familyScores}
-        photosMap={photosMap}
-      />
-    </div>
+    <DashboardClient
+      initialProperties={(properties || []) as any}
+      familyScores={familyScores}
+      photosMap={photosMap}
+    />
   )
 }
