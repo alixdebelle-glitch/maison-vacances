@@ -89,6 +89,26 @@ export interface Score {
   updated_at: string
 }
 
+export interface Agency {
+  id: string
+  name: string
+  phone: string | null
+  website: string | null
+  address: string | null
+  notes: string | null
+  created_at: string
+}
+
+export interface AgencyContact {
+  id: string
+  agency_id: string
+  name: string
+  phone_mobile: string | null
+  email: string | null
+  role: string | null
+  created_at: string
+}
+
 export interface Note {
   id: string
   created_at: string

@@ -4,18 +4,22 @@ import { notFound } from 'next/navigation'
 
 export default async function ModifierBienPage({ params }: { params: { id: string } }) {
   const supabase = createClient()
-  const { data: property } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('id', params.id)
-    .single()
+  const [{ data: property }, { data: agencies }, { data: contacts }] = await Promise.all([
+    supabase.from('properties').select('*').eq('id', params.id).single(),
+    supabase.from('agencies').select('*').order('name'),
+    supabase.from('agency_contacts').select('*').order('name'),
+  ])
 
   if (!property) notFound()
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-3xl font-serif text-stone-800 mb-8">Modifier le bien</h1>
-      <PropertyForm property={property as any} />
+      <PropertyForm
+        property={property as any}
+        agencies={(agencies || []) as any}
+        agencyContacts={(contacts || []) as any}
+      />
     </div>
   )
 }

@@ -4,11 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress, getDrivingInfo } from '@/lib/utils'
-import { Property, PropertyStatus, STATUS_LABELS } from '@/types'
-import { MapPin, Euro, Home, Building2, FileText, Loader2, AlertTriangle } from 'lucide-react'
+import { Property, PropertyStatus, STATUS_LABELS, Agency, AgencyContact } from '@/types'
+import { MapPin, Euro, Home, Building2, FileText, Loader2, AlertTriangle, Users } from 'lucide-react'
 
 interface PropertyFormProps {
   property?: Property
+  agencies?: Agency[]
+  agencyContacts?: AgencyContact[]
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -20,13 +22,16 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-export default function PropertyForm({ property }: PropertyFormProps) {
+export default function PropertyForm({ property, agencies = [], agencyContacts = [] }: PropertyFormProps) {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [geocoding, setGeocoding] = useState(false)
   const [error, setError] = useState('')
   const [duplicate, setDuplicate] = useState<{ id: string; name: string } | null>(null)
+  const [selectedContactId, setSelectedContactId] = useState<string>(
+    (property as any)?.agency_contact_id || ''
+  )
 
   const [form, setForm] = useState({
     nickname: property?.nickname || '',
@@ -54,6 +59,21 @@ export default function PropertyForm({ property }: PropertyFormProps) {
     description_travaux: property?.description_travaux || '',
     status: (property?.status || 'a_visiter') as PropertyStatus,
   })
+
+  function handleSelectContact(contactId: string) {
+    setSelectedContactId(contactId)
+    if (!contactId) return
+    const contact = agencyContacts.find(c => c.id === contactId)
+    if (!contact) return
+    const agency = agencies.find(a => a.id === contact.agency_id)
+    setForm(f => ({
+      ...f,
+      agency_name: agency?.name || f.agency_name,
+      agency_contact: contact.name,
+      agency_phone: contact.phone_mobile || agency?.phone || f.agency_phone,
+      agency_email: contact.email || f.agency_email,
+    }))
+  }
 
   async function checkDuplicate(url: string) {
     if (!url.trim()) { setDuplicate(null); return }
@@ -106,6 +126,8 @@ export default function PropertyForm({ property }: PropertyFormProps) {
       surface: form.surface ? parseFloat(form.surface) : null,
       rooms: form.rooms ? parseInt(form.rooms) : null,
       nickname: form.nickname || null,
+      agency_contact_id: selectedContactId || null,
+      agency_id: selectedContactId ? (agencyContacts.find(c => c.id === selectedContactId)?.agency_id || null) : null,
       annonce_url: form.annonce_url || null,
       agency_name: form.agency_name || null,
       agency_contact: form.agency_contact || null,
@@ -284,8 +306,53 @@ export default function PropertyForm({ property }: PropertyFormProps) {
       {/* Agence */}
       <div className="card">
         <h2 className="text-lg font-serif text-stone-700 mb-4 flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-orange-500" /> Agence
+          <Building2 className="w-5 h-5 text-orange-500" /> Agence & Contact
         </h2>
+
+        {/* Dropdown contact */}
+        {agencyContacts.length > 0 && (
+          <div className="mb-4">
+            <label className="label flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" /> Sélectionner un contact existant
+            </label>
+            <select
+              className="input"
+              value={selectedContactId}
+              onChange={e => handleSelectContact(e.target.value)}
+            >
+              <option value="">— Choisir ou saisir manuellement —</option>
+              {agencies.map(agency => {
+                const agencyContacts_ = agencyContacts.filter(c => c.agency_id === agency.id)
+                if (agencyContacts_.length === 0) return null
+                return (
+                  <optgroup key={agency.id} label={agency.name}>
+                    {agencyContacts_.map(contact => (
+                      <option key={contact.id} value={contact.id}>
+                        {contact.name}
+                        {contact.role ? ` (${contact.role})` : ''}
+                        {contact.phone_mobile ? ` — ${contact.phone_mobile}` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                )
+              })}
+              {agencyContacts.filter(c => !c.agency_id).length > 0 && (
+                <optgroup label="Sans agence">
+                  {agencyContacts.filter(c => !c.agency_id).map(contact => (
+                    <option key={contact.id} value={contact.id}>{contact.name}</option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            {selectedContactId && (
+              <button type="button" onClick={() => setSelectedContactId('')}
+                className="text-xs text-stone-400 hover:text-stone-600 mt-1">
+                ✕ Revenir à la saisie manuelle
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <Field label="Nom de l'agence">
             <input type="text" className="input" placeholder="Immobilier Provence" value={form.agency_name}

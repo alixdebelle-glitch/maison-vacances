@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Home, Map, BarChart2, FileText, Settings, LogOut, Mountain, PlusCircle } from 'lucide-react'
+import { Home, Map, BarChart2, FileText, SlidersHorizontal, LogOut, Mountain, PlusCircle, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
@@ -11,7 +11,8 @@ const navItems = [
   { href: '/carte', icon: Map, label: 'Carte' },
   { href: '/comparaison', icon: BarChart2, label: 'Comparaison' },
   { href: '/notes', icon: FileText, label: 'Notes' },
-  { href: '/parametres/criteres', icon: Settings, label: 'Paramètres' },
+  { href: '/parametres/agences', icon: Building2, label: 'Agences' },
+  { href: '/parametres/criteres', icon: SlidersHorizontal, label: 'Critères' },
 ]
 
 export default function Sidebar() {
