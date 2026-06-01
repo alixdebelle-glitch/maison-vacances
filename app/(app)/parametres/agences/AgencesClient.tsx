@@ -20,7 +20,7 @@ function AgencyForm({ initial, onSave, onCancel }: {
     <div className="space-y-3 p-4 bg-stone-50 rounded-xl border border-stone-200">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="label">Nom de l'agence *</label>
+          <label className="label">Nom de l&apos;agence *</label>
           <input className="input" placeholder="Immovar Uzès" value={name} onChange={e => setName(e.target.value)} autoFocus />
         </div>
         <div>
@@ -113,7 +113,7 @@ export default function AgencesClient({ initialAgencies, initialContacts }: {
   function toggleExpand(id: string) {
     setExpandedAgencies(prev => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) { next.delete(id) } else { next.add(id) }
       return next
     })
   }
